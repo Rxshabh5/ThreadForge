@@ -45,7 +45,7 @@ services:
     name: threadforge-frontend
     runtime: static
     rootDir: frontend
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --legacy-peer-deps && npm run build
     staticPublishPath: dist
     routes:
       - type: rewrite
