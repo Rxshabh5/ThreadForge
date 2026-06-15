@@ -1,7 +1,6 @@
 import axios from 'axios'
 import { getAuthHeaders, getEmailFromToken } from './auth'
-
-const API_URL = 'http://localhost:8000'
+import { API_URL } from './config'
 
 export const draftsApi = {
 
@@ -34,6 +33,11 @@ export const draftsApi = {
 
   publishDraft: async (id) => {
     const response = await axios.post(`${API_URL}/drafts/publish/${id}`, null, { headers: getAuthHeaders() })
+    return response.data
+  },
+
+  submitForReview: async (id) => {
+    const response = await axios.post(`${API_URL}/drafts/review/${id}`, null, { headers: getAuthHeaders() })
     return response.data
   },
 

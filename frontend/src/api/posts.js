@@ -1,8 +1,5 @@
 import axios from "axios"
-
-const API_URL =
-  "http://localhost:8000"
-
+import { API_URL } from "./config"
 
 function getAuthHeaders() {
 
@@ -28,7 +25,7 @@ function transformPost(post) {
 
     category: post.category,
 
-    status: "published",
+    status: post.status || "published",
 
     tags: [],
 
@@ -105,6 +102,17 @@ export const postsApi = {
 
       return []
     }
+  },
+
+  getMyPosts: async () => {
+    const response = await axios.get(`${API_URL}/posts/mine`, { headers: getAuthHeaders() })
+    return response.data.map(post => ({
+      ...transformPost(post),
+      likes: post.likes || 0,
+      comments: post.comments || 0,
+      reposts: post.reposts || 0,
+      bookmarks: post.bookmarks || 0,
+    }))
   },
 
 

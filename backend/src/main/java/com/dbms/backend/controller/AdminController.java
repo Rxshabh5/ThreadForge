@@ -7,6 +7,7 @@ import com.dbms.backend.repository.UserRepository;
 import com.dbms.backend.security.JwtUtil;
 
 import com.dbms.backend.service.PostService;
+import com.dbms.backend.service.MongoSyncService;
 
 import com.dbms.backend.user.User;
 
@@ -15,6 +16,7 @@ import io.jsonwebtoken.Claims;
 import org.springframework.web.client.RestTemplate;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +43,9 @@ public class AdminController {
     @Autowired
     private PostService postService;
 
+    @Autowired
+    private MongoSyncService mongoSyncService;
+
         @Autowired
         private com.dbms.backend.repository.DraftRepository draftRepository;
 
@@ -48,7 +53,9 @@ public class AdminController {
     private JwtUtil jwtUtil;
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final String NODE_BACKEND_URL = "http://localhost:5000";
+
+    @Value("${node.backend.url:http://localhost:5000}")
+    private String nodeBackendUrl;
 
 
     private User requireAdmin(
@@ -176,6 +183,7 @@ public class AdminController {
         );
 
         userRepository.deleteById(id);
+        mongoSyncService.deleteUser(id);
 
         Map<String, String> response =
                 new HashMap<>();
@@ -214,6 +222,7 @@ public class AdminController {
 
         targetUser.setRole(newRole);
         userRepository.save(targetUser);
+        mongoSyncService.updateUserRole(id, newRole);
 
         try {
             Map<String, Object> log = new HashMap<>();
@@ -221,7 +230,7 @@ public class AdminController {
             log.put("action", "role-change");
             log.put("entityType", "user");
             log.put("entityId", id);
-            restTemplate.postForObject(NODE_BACKEND_URL + "/logs", log, String.class);
+            restTemplate.postForObject(nodeBackendUrl + "/logs", log, String.class);
         } catch (Exception e) {
             System.out.println("Role change audit log failed: " + e.getMessage());
         }

@@ -1,0 +1,57 @@
+services:
+  - type: web
+    name: threadforge-node-backend
+    env: node
+    rootDir: node-backend
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    envVars:
+      - key: MONGO_URI
+        sync: false
+
+  - type: web
+    name: threadforge-spring-backend
+    env: java
+    rootDir: backend
+    plan: free
+    buildCommand: ./mvnw clean package -DskipTests
+    startCommand: java -jar target/backend-0.0.1-SNAPSHOT.jar
+    envVars:
+      - key: JAVA_VERSION
+        value: 25
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: NODE_BACKEND_URL
+        sync: false
+
+  - type: web
+    name: threadforge-gateway
+    env: python
+    rootDir: gateway
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SPRING_BOOT_URL
+        sync: false
+      - key: NODE_BACKEND_URL
+        sync: false
+
+  - type: web
+    name: threadforge-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+
+databases:
+  - name: threadforge-postgres
+    plan: free

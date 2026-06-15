@@ -7,16 +7,13 @@ import {
 } from 'react'
 
 import axios from 'axios'
+import { API_URL } from '../api/config'
 
 export const AuthContext =
   createContext(null)
 
 export const useAuth = () =>
   useContext(AuthContext)
-
-const API_URL =
-  'http://localhost:8000'
-
 
 export function AuthProvider({
   children

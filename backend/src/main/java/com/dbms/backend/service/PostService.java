@@ -8,10 +8,13 @@ import org.springframework.http.MediaType;
 import com.dbms.backend.entity.Post;
 
 import com.dbms.backend.repository.PostRepository;
+import com.dbms.backend.repository.CommentRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
 import java.util.Map;
@@ -24,11 +27,18 @@ public class PostService {
         private final RestTemplate restTemplate =
         new RestTemplate();
 
-        private final String NODE_BACKEND = "http://localhost:5000";
+        @Value("${node.backend.url:http://localhost:5000}")
+        private String nodeBackend;
 
 
     @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    private CommentRepository commentRepository;
+
+    @Autowired
+    private MongoSyncService mongoSyncService;
 
 
     // GET ALL POSTS
@@ -44,11 +54,22 @@ public class PostService {
         return postRepository.findByAuthorEmail(authorEmail);
     }
 
+    public List<Post> getPostsByStatus(String status) {
+        if ("published".equals(status)) {
+            return postRepository.findByStatusOrStatusIsNull(status);
+        }
+        return postRepository.findByStatus(status);
+    }
+
 
     // CREATE POST
 public Post createPost(
         Post post
 ) {
+
+    if (post.getStatus() == null || post.getStatus().isBlank()) {
+        post.setStatus("published");
+    }
 
     Post savedPost =
             postRepository.save(post);
@@ -69,7 +90,7 @@ public Post createPost(
                 );
 
         restTemplate.postForObject(
-                "http://localhost:5000/posts",
+                nodeBackend + "/posts",
                 request,
                 String.class
         );
@@ -84,7 +105,7 @@ public Post createPost(
                         String[] parts = savedPost.getTitle() != null ? savedPost.getTitle().split("\\s+") : new String[]{};
                         embed.put("keywords", parts.length > 0 ? java.util.Arrays.stream(parts).limit(10).map(s -> s.replaceAll("[^a-zA-Z]", "")).toArray(String[]::new) : new String[]{});
 
-                        restTemplate.postForObject(NODE_BACKEND + "/embeddings", embed, String.class);
+                        restTemplate.postForObject(nodeBackend + "/embeddings", embed, String.class);
                 } catch (Exception e) {
                         System.out.println("Embedding push failed: " + e.getMessage());
                 }
@@ -96,7 +117,7 @@ public Post createPost(
                         log.put("entityType", "post");
                         log.put("entityId", savedPost.getId());
 
-                        restTemplate.postForObject(NODE_BACKEND + "/logs", log, String.class);
+                        restTemplate.postForObject(nodeBackend + "/logs", log, String.class);
                 } catch (Exception e) {
                         System.out.println("Log push failed: " + e.getMessage());
                 }
@@ -155,7 +176,7 @@ public Post createPost(
                         version.put("authorEmail", existingPost.getAuthorEmail());
                         version.put("versionNumber", System.currentTimeMillis());
 
-                        restTemplate.postForObject(NODE_BACKEND + "/versions", version, String.class);
+                        restTemplate.postForObject(nodeBackend + "/versions", version, String.class);
 
                         Map<String, Object> log = new HashMap<>();
                         log.put("user", existingPost.getAuthorEmail());
@@ -163,7 +184,7 @@ public Post createPost(
                         log.put("entityType", "post");
                         log.put("entityId", existingPost.getId());
 
-                        restTemplate.postForObject(NODE_BACKEND + "/logs", log, String.class);
+                        restTemplate.postForObject(nodeBackend + "/logs", log, String.class);
 
                 } catch (Exception e) {
                         System.out.println("Version/log push failed: " + e.getMessage());
@@ -181,6 +202,17 @@ public Post createPost(
                 updatedPost.getCategory()
         );
 
+        if (updatedPost.getStatus() != null
+                && !updatedPost.getStatus().isBlank()
+                && !updatedPost.getStatus().equals(existingPost.getStatus())
+                && !isAdmin) {
+            throw new RuntimeException("Only administrators can change review status");
+        }
+
+        if (updatedPost.getStatus() != null && !updatedPost.getStatus().isBlank()) {
+            existingPost.setStatus(updatedPost.getStatus());
+        }
+
         return postRepository.save(
                 existingPost
         );
@@ -196,6 +228,7 @@ public Post createPost(
 
 
     // DELETE POST
+    @Transactional
     public void deletePost(
 
             Long id,
@@ -225,7 +258,10 @@ public Post createPost(
             );
         }
 
-                postRepository.deleteById(id);
+                commentRepository.deleteByPostId(id);
+                mongoSyncService.deleteCommentsByPost(id);
+                postRepository.delete(existingPost);
+                deletePostMirror(id);
 
                 // log deletion
                 try {
@@ -235,17 +271,43 @@ public Post createPost(
                         log.put("entityType", "post");
                         log.put("entityId", id);
 
-                        restTemplate.postForObject(NODE_BACKEND + "/logs", log, String.class);
+                        restTemplate.postForObject(nodeBackend + "/logs", log, String.class);
                 } catch (Exception e) {
                         System.out.println("Delete log push failed: " + e.getMessage());
                 }
     }
 
 
+    @Transactional
     public void deletePostsByAuthor(
             String authorEmail
     ) {
-
+        List<Post> posts = postRepository.findByAuthorEmail(authorEmail);
+        for (Post post : posts) {
+            commentRepository.deleteByPostId(post.getId());
+            mongoSyncService.deleteCommentsByPost(post.getId());
+            deletePostMirror(post.getId());
+        }
         postRepository.deleteByAuthorEmail(authorEmail);
+    }
+
+    private void deletePostMirror(Long postId) {
+        try {
+            restTemplate.delete(nodeBackend + "/posts/" + postId);
+        } catch (Exception e) {
+            System.out.println("MongoDB post cleanup failed: " + e.getMessage());
+        }
+
+        try {
+            restTemplate.delete(nodeBackend + "/versions/post/" + postId);
+        } catch (Exception e) {
+            System.out.println("MongoDB version cleanup failed: " + e.getMessage());
+        }
+
+        try {
+            restTemplate.delete(nodeBackend + "/embeddings/post/" + postId);
+        } catch (Exception e) {
+            System.out.println("MongoDB embedding cleanup failed: " + e.getMessage());
+        }
     }
 }

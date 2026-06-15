@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Header
+import os
 
 import requests
 
@@ -15,8 +16,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SPRING_BOOT_URL = "http://localhost:8080"
-NODE_BACKEND_URL = "http://localhost:5000"
+SPRING_BOOT_URL = os.getenv("SPRING_BOOT_URL", "http://localhost:8080")
+NODE_BACKEND_URL = os.getenv("NODE_BACKEND_URL", "http://localhost:5000")
 
 
 # =========================
@@ -57,6 +58,15 @@ def get_posts():
         f"{SPRING_BOOT_URL}/posts"
     )
 
+    return response.json()
+
+
+@app.get("/posts/mine")
+def get_my_posts(authorization: str = Header(None)):
+    headers = {}
+    if authorization:
+        headers["Authorization"] = authorization
+    response = requests.get(f"{SPRING_BOOT_URL}/posts/mine", headers=headers)
     return response.json()
 
 
@@ -119,6 +129,8 @@ def delete_post(
         f"{SPRING_BOOT_URL}/posts/{id}",
         headers=headers
     )
+
+    response.raise_for_status()
 
     return {
         "message": "Post deleted"
@@ -185,10 +197,15 @@ def save_draft(draft: dict, authorization: str = Header(None)):
 
 
 @app.get("/drafts/{email}")
-def get_drafts(email: str):
+def get_drafts(email: str, authorization: str = Header(None)):
+
+    headers = {}
+    if authorization:
+        headers["Authorization"] = authorization
 
     response = requests.get(
-        f"{SPRING_BOOT_URL}/drafts/{email}"
+        f"{SPRING_BOOT_URL}/drafts/{email}",
+        headers=headers
     )
 
     return response.json()
@@ -207,6 +224,31 @@ def publish_draft(id: int, authorization: str = Header(None)):
         headers=headers
     )
 
+    return response.json()
+
+
+@app.post("/drafts/review/{id}")
+def submit_draft_for_review(id: int, authorization: str = Header(None)):
+    headers = {}
+    if authorization:
+        headers["Authorization"] = authorization
+    response = requests.post(
+        f"{SPRING_BOOT_URL}/drafts/review/{id}",
+        headers=headers
+    )
+    return response.json()
+
+
+@app.delete("/drafts/{id}")
+def delete_draft(id: int, authorization: str = Header(None)):
+    headers = {}
+    if authorization:
+        headers["Authorization"] = authorization
+    response = requests.delete(
+        f"{SPRING_BOOT_URL}/drafts/{id}",
+        headers=headers
+    )
+    response.raise_for_status()
     return response.json()
 
 
@@ -320,6 +362,30 @@ def get_admin_users(
         headers=headers
     )
 
+    return response.json()
+
+
+@app.get("/admin/posts")
+def get_admin_posts(authorization: str = Header(None)):
+    headers = {}
+    if authorization:
+        headers["Authorization"] = authorization
+    response = requests.get(
+        f"{SPRING_BOOT_URL}/admin/posts",
+        headers=headers
+    )
+    return response.json()
+
+
+@app.get("/admin/stats")
+def get_admin_stats(authorization: str = Header(None)):
+    headers = {}
+    if authorization:
+        headers["Authorization"] = authorization
+    response = requests.get(
+        f"{SPRING_BOOT_URL}/admin/stats",
+        headers=headers
+    )
     return response.json()
 
 

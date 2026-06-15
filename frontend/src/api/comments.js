@@ -1,7 +1,6 @@
 import axios from 'axios'
 import { getAuthHeaders } from './auth'
-
-const API_URL = 'http://localhost:8000'
+import { API_URL } from './config'
 
 export const commentsApi = {
   getCommentsForPost: async (postId) => {

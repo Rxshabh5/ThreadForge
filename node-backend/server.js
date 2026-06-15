@@ -7,6 +7,8 @@ const postRoutes = require("./routes/posts");
 const versionRoutes = require("./routes/versions");
 const logRoutes = require("./routes/logs");
 const embeddingRoutes = require("./routes/embeddings");
+const userRoutes = require("./routes/users");
+const commentRoutes = require("./routes/comments");
 
 const app = express();
 
@@ -17,6 +19,8 @@ app.use("/posts", postRoutes);
 app.use("/versions", versionRoutes);
 app.use("/logs", logRoutes);
 app.use("/embeddings", embeddingRoutes);
+app.use("/users", userRoutes);
+app.use("/comments", commentRoutes);
 
 const DEFAULT_LOCAL_MONGO = 'mongodb://127.0.0.1:27017/threadforge'
 const mongoUri = process.env.MONGO_URI || DEFAULT_LOCAL_MONGO
@@ -44,8 +48,10 @@ mongoose
     }
   });
 
-app.listen(process.env.PORT, () => {
+const port = process.env.PORT || 5000;
+
+app.listen(port, () => {
   console.log(
-    `Node Server Running On Port ${process.env.PORT}`
+    `Node Server Running On Port ${port}`
   );
 });

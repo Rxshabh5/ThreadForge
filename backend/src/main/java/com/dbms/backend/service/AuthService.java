@@ -32,6 +32,9 @@ public class AuthService {
     @Autowired
 private JwtUtil jwtUtil;
 
+    @Autowired
+    private MongoSyncService mongoSyncService;
+
 
     public User register(
             RegisterRequest request
@@ -63,7 +66,11 @@ private JwtUtil jwtUtil;
 
         user.setRole(role);
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        mongoSyncService.syncUser(savedUser);
+
+        return savedUser;
     }
     public Map<String, String> login(
         LoginRequest request
