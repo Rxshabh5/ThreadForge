@@ -49,27 +49,10 @@ public class SecurityConfig {
                         )
                 )
 
+                
                 .authorizeHttpRequests(auth -> auth
-
-                        .requestMatchers(
-                                "/auth/**"
-                        ).permitAll()
-
-                        .requestMatchers(
-                                "/posts"
-                        ).permitAll()
-
-                        .requestMatchers(
-                        "/posts/*"
-                        ).authenticated()
-
-                        .requestMatchers(
-                                "/admin/**"
-                        ).authenticated()
-
-                        .anyRequest()
-                        .authenticated()
-                )
+        .anyRequest().permitAll()
+)
 
                 .addFilterBefore(
                         jwtFilter,
