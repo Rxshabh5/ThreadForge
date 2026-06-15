@@ -54,7 +54,3 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://threadforge-gateway.onrender.com
-
-databases:
-  - name: threadforge-postgres
-    plan: free
