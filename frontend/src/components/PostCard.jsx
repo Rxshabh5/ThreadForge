@@ -164,7 +164,7 @@ export default function PostCard({
   const handleDelete = async () => {
     try {
       if (typeof onDelete === 'function') {
-        await onDelete(post.id)
+        await onDelete(post)
       } else {
         await postsApi.deletePost(post.id)
         dispatch({

@@ -7,12 +7,12 @@ import PostCard from '../components/PostCard'
 import { useDebounce } from '../hooks'
 
 export default function FeedPage() {
-  const { posts, loadMorePosts, loadingMorePosts, hasMorePosts, postsError } = useApp()
+  const { feedPosts = [], loadMorePosts, loadingMorePosts, hasMorePosts, postsError } = useApp()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const debSearch = useDebounce(search, 250)
 
-  const filtered = posts.filter((p) => {
+  const filtered = feedPosts.filter((p) => {
     const q = debSearch.toLowerCase()
     return !q ||
       p.title.toLowerCase().includes(q) ||

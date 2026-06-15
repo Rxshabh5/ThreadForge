@@ -24,6 +24,8 @@ public class Post {
 
     private String authorRole;
 
+    private String status = "published";
+
     private Integer likes = 0;
 
     private Integer comments = 0;
@@ -109,6 +111,14 @@ public class Post {
     ) {
 
         this.authorRole = authorRole;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public Integer getLikes() {

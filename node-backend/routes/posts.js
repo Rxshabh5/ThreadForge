@@ -6,7 +6,10 @@ const Post = require("../models/Post");
 router.post("/", async (req, res) => {
   try {
 
-    const post = new Post(req.body);
+    const post = new Post({
+      ...req.body,
+      postgresId: req.body.postgresId ?? req.body.id
+    });
 
     await post.save();
 
@@ -32,6 +35,15 @@ router.get("/", async (req, res) => {
     res.status(500).json({
       error: error.message
     });
+  }
+});
+
+router.delete("/:postgresId", async (req, res) => {
+  try {
+    const result = await Post.deleteMany({ postgresId: Number(req.params.postgresId) });
+    res.json({ deletedCount: result.deletedCount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

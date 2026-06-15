@@ -12,13 +12,13 @@ export default function PublishedPage() {
 
   const filtered = published.filter(p =>
     !debSearch ||
-    p.title.toLowerCase().includes(debSearch.toLowerCase()) ||
-    p.tags.some(t => t.includes(debSearch.toLowerCase()))
+    p.title?.toLowerCase().includes(debSearch.toLowerCase()) ||
+    (p.tags || []).some(t => t.includes(debSearch.toLowerCase()))
   )
 
-  const totalLikes    = published.reduce((a, p) => a + p.likes, 0)
-  const totalComments = published.reduce((a, p) => a + p.comments, 0)
-  const totalReposts  = published.reduce((a, p) => a + p.reposts, 0)
+  const totalLikes    = published.reduce((a, p) => a + (p.likes || 0), 0)
+  const totalComments = published.reduce((a, p) => a + (p.comments || 0), 0)
+  const totalReposts  = published.reduce((a, p) => a + (p.reposts || 0), 0)
 
   return (
     <>
@@ -33,7 +33,7 @@ export default function PublishedPage() {
             <span className="search-icon"><Search size={14} /></span>
             <input
               className="search-input"
-              placeholder="Search published…"
+              placeholder="Search your published posts..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -69,7 +69,7 @@ export default function PublishedPage() {
 
         {filtered.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">🌐</div>
+            <div className="empty-icon"><Globe size={34} /></div>
             <div className="empty-title">{search ? 'No results' : 'Nothing published yet'}</div>
             <div className="empty-sub">
               {search ? `No published posts match "${search}"` : 'Publish your first post to see it here.'}

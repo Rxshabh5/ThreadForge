@@ -12,6 +12,10 @@ public interface PostRepository
             String authorEmail
     );
 
+    List<Post> findByStatus(String status);
+
+    List<Post> findByStatusOrStatusIsNull(String status);
+
     void deleteByAuthorEmail(
             String authorEmail
     );

@@ -1,25 +1,30 @@
-import { useNavigate } from 'react-router-dom'
-import { Search, CheckCircle, RotateCcw, PenLine } from 'lucide-react'
+import { Search, CheckCircle, RotateCcw } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import { useAuth } from '../context/AuthContext'
+import { postsApi } from '../api/posts'
 import { useAsync, simulateAsync } from '../hooks'
 import PostCard from '../components/PostCard'
 
 export default function ReviewPage() {
   const { review, dispatch, addToast } = useApp()
-  const navigate = useNavigate()
+  const { user } = useAuth()
   const { loading, run } = useAsync()
 
   const approve = async (post) => {
     await run(async () => {
-      await simulateAsync(1500)
-      dispatch({ type: 'UPDATE_POST', id: post.id, updates: { status: 'published', createdAt: 'Just now' } })
-      addToast('🚀 Approved and published!', 'success')
+      await simulateAsync(300)
+      const updated = await postsApi.updatePost(post.id, {
+        title: post.title, content: post.body, category: post.category, status: 'published'
+      })
+      dispatch({ type: 'UPDATE_POST', id: post.id, updates: updated })
+      addToast('Approved and published', 'success')
     })
   }
 
-  const reject = (post) => {
-    dispatch({ type: 'UPDATE_POST', id: post.id, updates: { status: 'draft' } })
-    addToast('Returned to drafts.', 'warning')
+  const reject = async (post) => {
+    await postsApi.deletePost(post.id)
+    dispatch({ type: 'DELETE_POST', id: post.id })
+    addToast('Review submission rejected and removed', 'warning')
   }
 
   return (
@@ -44,7 +49,7 @@ export default function ReviewPage() {
             <div key={post.id} style={{ animationDelay: `${i * 50}ms` }}>
               <PostCard post={post} />
               <div className="quick-actions">
-                <button
+                {user?.role === 'ADMIN' && <button
                   className="btn btn-success btn-sm"
                   onClick={() => approve(post)}
                   disabled={loading}
@@ -53,10 +58,11 @@ export default function ReviewPage() {
                     ? <><span className="spinner" /> Approving…</>
                     : <><CheckCircle size={12} /> Approve & Publish</>
                   }
-                </button>
-                <button className="btn btn-warning btn-sm" onClick={() => reject(post)}>
-                  <RotateCcw size={12} /> Back to Draft
-                </button>
+                </button>}
+                {user?.role === 'ADMIN' && <button className="btn btn-danger btn-sm" onClick={() => reject(post)}>
+                  <RotateCcw size={12} /> Reject & Delete
+                </button>}
+                {user?.role !== 'ADMIN' && <span className="review-pending-note">Awaiting administrator review</span>}
               </div>
             </div>
           ))

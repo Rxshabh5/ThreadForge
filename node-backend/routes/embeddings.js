@@ -24,4 +24,13 @@ router.get('/', async (req, res) => {
   }
 })
 
+router.delete('/post/:postId', async (req, res) => {
+  try {
+    const result = await Embedding.deleteMany({ postId: Number(req.params.postId) })
+    res.json({ deletedCount: result.deletedCount })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 module.exports = router

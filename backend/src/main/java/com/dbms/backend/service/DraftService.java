@@ -23,8 +23,19 @@ public class DraftService {
         private PostService postService;
 
     public Draft saveDraft(
-            Draft draft
+            Draft draft,
+            String currentUserEmail,
+            String currentUserRole
     ) {
+        if (draft.getId() != null) {
+            Draft existing = draftRepository.findById(draft.getId()).orElseThrow();
+            boolean isOwner = existing.getAuthorEmail().equals(currentUserEmail);
+            boolean isAdmin = "ADMIN".equals(currentUserRole);
+            if (!isOwner && !isAdmin) {
+                throw new RuntimeException("Unauthorized");
+            }
+        }
+        draft.setAuthorEmail(currentUserEmail);
         return draftRepository.save(draft);
     }
 
@@ -35,13 +46,30 @@ public class DraftService {
     }
 
     public Post publishDraft(
-            Long draftId
+            Long draftId,
+            String currentUserEmail,
+            String currentUserRole
     ) {
+
+        return moveDraftToPost(draftId, "published", currentUserEmail, currentUserRole);
+    }
+
+    public Post submitForReview(Long draftId, String currentUserEmail, String currentUserRole) {
+        return moveDraftToPost(draftId, "review", currentUserEmail, currentUserRole);
+    }
+
+    private Post moveDraftToPost(Long draftId, String status, String currentUserEmail, String currentUserRole) {
 
         Draft draft =
                 draftRepository
                         .findById(draftId)
                         .orElseThrow();
+
+        boolean isOwner = draft.getAuthorEmail().equals(currentUserEmail);
+        boolean isAdmin = "ADMIN".equals(currentUserRole);
+        if (!isOwner && !isAdmin) {
+            throw new RuntimeException("Unauthorized");
+        }
 
         Post post =
                 new Post();
@@ -66,6 +94,8 @@ public class DraftService {
                 "USER"
         );
 
+        post.setStatus(status);
+
 
         // Use PostService to ensure cross-service sync, versions, and logs
         Post publishedPost = postService.createPost(post);
@@ -77,7 +107,13 @@ public class DraftService {
         return publishedPost;
     }
 
-        public void deleteDraft(Long id) {
-                draftRepository.deleteById(id);
+        public void deleteDraft(Long id, String currentUserEmail, String currentUserRole) {
+                Draft draft = draftRepository.findById(id).orElseThrow();
+                boolean isOwner = draft.getAuthorEmail().equals(currentUserEmail);
+                boolean isAdmin = "ADMIN".equals(currentUserRole);
+                if (!isOwner && !isAdmin) {
+                        throw new RuntimeException("Unauthorized");
+                }
+                draftRepository.delete(draft);
         }
 }

@@ -58,8 +58,13 @@ public class PostController {
     // GET ALL POSTS
     @GetMapping
     public List<Post> getPosts() {
+        return postService.getPostsByStatus("published");
+    }
 
-        return postService.getAllPosts();
+    @GetMapping("/mine")
+    public List<Post> getMyPosts(@RequestHeader("Authorization") String authHeader) {
+        User currentUser = getCurrentUser(authHeader);
+        return postService.getPostsByAuthor(currentUser.getEmail());
     }
 
 

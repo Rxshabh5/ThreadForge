@@ -10,6 +10,7 @@ import {
 import { postsApi } from "../api/posts"
 import { draftsApi } from "../api/drafts"
 import { getEmailFromToken } from "../api/auth"
+import { useAuth } from "./AuthContext"
 
 export const AppContext = createContext(null)
 
@@ -185,6 +186,8 @@ function commentsReducer(state, action) {
 
 export function AppProvider({ children }) {
 
+  const { user } = useAuth()
+
   const [posts, dispatch] = useReducer(
     postsReducer,
     []
@@ -211,13 +214,20 @@ export function AppProvider({ children }) {
 
   try {
 
-    const posts = await postsApi.getPosts()
+    const [publicPosts, myPosts] = await Promise.all([
+      postsApi.getPosts(),
+      getEmailFromToken() ? postsApi.getMyPosts() : Promise.resolve([])
+    ])
+
+    const byId = new Map(publicPosts.map(post => [post.id, post]))
+    myPosts.forEach(post => byId.set(post.id, post))
+    const posts = Array.from(byId.values())
 
     const formattedPosts = posts.map(post => ({
 
       ...post,
 
-      status: "published",
+      status: post.status || "published",
 
       tags: post.tags || [],
 
@@ -356,12 +366,14 @@ export function AppProvider({ children }) {
     : posts.filter(post => post.status === 'draft')
 
   const review = posts.filter(
-    post => post.status === "review"
+    post => post.status === "review" && (user?.role === "ADMIN" || post.authorEmail === user?.email)
   )
 
   const published = posts.filter(
-    post => post.status === "published"
+    post => post.status === "published" && post.authorEmail === user?.email
   )
+
+  const feedPosts = posts.filter(post => post.status === "published")
 
 
   // ANALYTICS
@@ -392,6 +404,7 @@ export function AppProvider({ children }) {
       value={{
 
         posts,
+        feedPosts,
         dispatch,
 
         comments,

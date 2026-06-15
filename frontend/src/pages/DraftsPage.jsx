@@ -10,6 +10,23 @@ export default function DraftsPage() {
   const navigate = useNavigate()
   const { loading, run } = useAsync()
 
+  const formatPost = (post, status) => ({
+    ...post,
+    body: post.content || '',
+    status,
+    tags: post.tags || [],
+    author: post.authorEmail || 'You',
+    authorHandle: `@${post.authorEmail?.split('@')[0] || 'you'}`,
+    likes: post.likes || 0,
+    comments: post.comments || 0,
+    reposts: post.reposts || 0,
+    bookmarks: post.bookmarks || 0,
+    createdAt: 'Just now',
+    readTime: 1,
+    wordCount: post.content ? post.content.split(/\s+/).length : 0,
+    avatarIdx: 0,
+  })
+
   const quickPublish = async (post) => {
     await run(async () => {
       await simulateAsync(1000)
@@ -17,7 +34,7 @@ export default function DraftsPage() {
       try {
         const published = await draftsApi.publishDraft(post.id)
 
-        dispatch({ type: 'ADD_POST', post: { ...published, body: published.content, status: 'published' } })
+        dispatch({ type: 'ADD_POST', post: formatPost(published, 'published') })
 
         addToast(`"${post.title.substring(0, 30)}…" published! 🚀`, 'success')
 
@@ -43,9 +60,18 @@ export default function DraftsPage() {
     })
   }
 
-  const submitReview = (post) => {
-    dispatch({ type: 'UPDATE_POST', id: post.id, updates: { status: 'review', createdAt: 'Just now' } })
-    addToast('Submitted for review! 🔍', 'info')
+  const submitReview = async (post) => {
+    await run(async () => {
+      try {
+        const submitted = await draftsApi.submitForReview(post.id)
+        dispatch({ type: 'ADD_POST', post: formatPost(submitted, 'review') })
+        if (refreshDrafts) await refreshDrafts()
+        addToast('Submitted for admin review', 'info')
+      } catch (error) {
+        console.error(error)
+        addToast('Could not submit for review', 'error')
+      }
+    })
   }
 
   return (
