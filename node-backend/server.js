@@ -15,6 +15,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.json({
+    status: "ok",
+    service: "threadforge-node-backend",
+    availableEndpoints: ["/health", "/users", "/posts", "/comments", "/versions", "/logs"],
+  });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
 app.use("/posts", postRoutes);
 app.use("/versions", versionRoutes);
 app.use("/logs", logRoutes);
