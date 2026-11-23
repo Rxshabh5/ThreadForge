@@ -1,8 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import Header
 import os
-
 import requests
 
 app = FastAPI()

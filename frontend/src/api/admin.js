@@ -1,49 +1,21 @@
 import axios from "axios"
 import { API_URL } from "./config"
-
-function getAuthHeaders() {
-
-  const token =
-    localStorage.getItem("token")
-
-  return {
-    Authorization:
-      `Bearer ${token}`
-  }
-}
-
+import { getAuthHeaders } from "./auth"
 
 export const adminApi = {
-
   getUsers: async () => {
-
-    const response =
-      await axios.get(
-        `${API_URL}/admin/users`,
-        {
-          headers:
-            getAuthHeaders()
-        }
-      )
-
+    const response = await axios.get(`${API_URL}/admin/users`, {
+      headers: getAuthHeaders()
+    })
     return response.data
   },
 
-
   deleteUser: async (id) => {
-
-    await axios.delete(
-      `${API_URL}/admin/users/${id}`,
-      {
-        headers:
-          getAuthHeaders()
-      }
-    )
-
+    await axios.delete(`${API_URL}/admin/users/${id}`, {
+      headers: getAuthHeaders()
+    })
     return true
-  }
-
-  ,
+  },
 
   updateUserRole: async (id, role) => {
     const response = await axios.put(
@@ -69,3 +41,4 @@ export const adminApi = {
     return response.data
   }
 }
+

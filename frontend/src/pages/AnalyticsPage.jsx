@@ -1,4 +1,4 @@
-import { BarChart2, TrendingUp, Heart, MessageCircle, Repeat2, Bookmark, Clock, FileText } from 'lucide-react'
+import { BarChart2, TrendingUp, Heart, MessageCircle, Repeat2, Clock, FileText } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 
 function BarChartRow({ label, value, max, color }) {

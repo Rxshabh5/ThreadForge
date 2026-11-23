@@ -1,10 +1,6 @@
 import axios from 'axios'
 import { API_URL } from './config'
-
-function getAuthHeaders() {
-  const token = localStorage.getItem('token')
-  return { Authorization: `Bearer ${token}` }
-}
+import { getAuthHeaders } from './auth'
 
 export const versionsApi = {
   getVersions: async (postId) => {

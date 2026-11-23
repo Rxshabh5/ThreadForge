@@ -1,11 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  Bold, Italic, Strikethrough, Heading1, Heading2,
-  Quote, List, Code, Code2, Link, Minus,
-  Eye, Save, Send, Rocket, X, Check, Hash,
-  AlignLeft, Type
-} from 'lucide-react'
+import { Eye, Save, Rocket } from 'lucide-react'
 
 import { useApp } from '../context/AppContext'
 import { postsApi } from '../api/posts'
